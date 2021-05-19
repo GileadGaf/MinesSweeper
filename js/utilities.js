@@ -14,3 +14,15 @@ function shuffle(items) {
     }
     return items;
 }
+
+// function getRandLocation(board) {
+//     if (!board) return null;
+//     var randRowIdx = getRandomInt(0, board.length);
+//     var randColIdx = getRandomInt(0, board[0].length);
+//     return { i: randRowIdx, j: randColIdx };
+
+// }
+
+function getSelector(location) {
+    return '#cell-' + location.i + '-' + location.j
+}

@@ -11,6 +11,15 @@
 
 <body onload="initGame()">
     <h1>Mines Sweeper</h1>
+    <div class="level-select">
+        <h2>Please choose a level:</h2>
+        <button data-size="4" onclick="changeLevel(this)">Beginner(4x4)</button>|
+        <button data-size="8" onclick="changeLevel(this)">Medium(8x8)</button>|
+        <button data-size="12" onclick="changeLevel(this)">Expert(12x12)</button>
+    </div>
+    <div class="time">
+        <h3>Time:<span>0</span> seconds</h3>
+    </div>
     <div class="board-container ">
         <table border="0" class="center">
             <tbody class="board">

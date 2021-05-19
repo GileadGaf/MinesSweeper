@@ -15,6 +15,7 @@ h1 {
 .level-select button {
     border: none;
     border: 2px solid black;
+    border-radius: 15px;
     background-color: darkgrey;
     cursor: pointer;
     height: 30px;
@@ -27,8 +28,30 @@ h1 {
     background-color: #fff;
 }
 
+.hints {
+    height: 50px;
+    width: 250px;
+    text-align: left;
+}
+
+.hints .hint {
+    width: 30px;
+    height: auto;
+    cursor: pointer;
+    padding: 20px;
+}
+
+.smiley {
+    height: 26px;
+    width: 26px;
+    cursor: pointer;
+    margin: auto;
+    font-size: 20px;
+}
+
 .lives {
     border: 2px solid white;
+    border-radius: 20px;
     width: 200px;
     height: 50px;
     margin: 20px auto;

@@ -17,11 +17,17 @@
         <button data-size="8" onclick="changeLevel(this)">Medium(8x8)</button>|
         <button data-size="12" onclick="changeLevel(this)">Expert(12x12)</button>
     </div>
+    <div class="hints">
+        <img class="hint" src="img/pic_bulboff.gif" alt="hint1" onclick="useHint(this)" />
+        <img class="hint" src="img/pic_bulboff.gif" alt="hint2" onclick="useHint(this)" />
+        <img class="hint" src="img/pic_bulboff.gif" alt="hint3" onclick="useHint(this)" />
+    </div>
     <div class="time">
         <h3>Time:<span>0</span> seconds</h3>
     </div>
+    <div class="smiley" onclick="restartGame()"></div>
     <div class="lives">
-        <h3><span>3</span> LIVES LEFT</span>
+        <h3><span>3</span> <span class="lives-string">LIVES</span> LEFT</span>
         </h3>
     </div>
     <div class="board-container ">
@@ -32,7 +38,8 @@
         </table>
     </div>
     <div class="footer">
-        By Gilead Gafni
+        Coffee Rights<br/>
+        <span> By Gilead Gafni</span>
     </div>
     <script src="js/utilities.js"></script>
     <script src="js/Game.js"></script>

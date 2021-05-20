@@ -13,8 +13,10 @@ const VICTORY_SMILEY = '😎';
 const HINT_UNUSED = 'img/pic_bulboff.gif';
 const HINT_USED = 'img/pic_bulbon.gif';
 
+
 var gBoard;
 var gLevel = {
+    title: 'Beginner',
     size: 4,
     mines: 2
 };
@@ -24,6 +26,7 @@ var gTimeInterval;
 
 function initGame() {
     initilizeGameObject();
+    renderBestScore();
     renderTime();
     renderLives();
     renderHints();
@@ -44,7 +47,7 @@ function initilizeGameObject() {
         markedCount: 0,
         secsPasssed: 0,
         hintLocations: []
-    };
+    }
 }
 
 function buildBoard() {
@@ -96,12 +99,15 @@ function changeLevel(elBtn) {
     gLevel.size = boardSize;
     switch (gLevel.size) {
         case 4:
+            gLevel.title = 'Beginner';
             gLevel.mines = 2;
             break;
         case 8:
+            gLevel.title = 'Medium';
             gLevel.mines = 12;
             break;
         case 12:
+            gLevel.title = 'Expert';
             gLevel.mines = 30;
             break;
         default:
@@ -132,7 +138,8 @@ function startTime() {
 }
 
 function renderTime() {
-    document.querySelector('.time span').innerText = gGame.secsPasssed++;
+    document.querySelector('.time span').innerText = gGame.secsPasssed;
+    gGame.secsPasssed++;
 }
 
 function renderLives() {
@@ -169,16 +176,24 @@ function cellClicked(elCell, i, j) {
             return;
         }
     }
+    gBoard[i][j].isShown = true;
 
-    //After first click the mines will be deployed.
+    //After first click the mines will be planted.
     if (gGame.isFirstClick) {
         gGame.isFirstClick = false;
         startTime();
         plantMines(gBoard);
         setMinesNegsCount(gBoard);
-
-
     }
+    var cellContent = (cell.isMine) ? MINE : cell.minesAroundCount;
+    if (cell.minesAroundCount === 0) {
+        elCell.innerText = cell.isMine ? MINE : '';
+        expandShown(gBoard, elCell, cellLocation);
+    } else {
+        elCell.classList.add('shown');
+        elCell.innerText = cellContent;
+    }
+
 
     if (gGame.isHintUsed) {
         expandShown(gBoard, elCell, cellLocation);
@@ -190,16 +205,6 @@ function cellClicked(elCell, i, j) {
             clearInterval(hideCellsTimeOut);
             hideCellsTimeOut = null;
         }, 1000);
-    }
-
-    cell.isShown = true;
-    var cellContent = (cell.isMine) ? MINE : cell.minesAroundCount;
-    if (cell.minesAroundCount === 0) {
-        elCell.innerText = cell.isMine ? MINE : '';
-        expandShown(gBoard, elCell, cellLocation);
-    } else {
-        elCell.classList.add('shown');
-        elCell.innerText = cellContent;
     }
 
     if (!gGame.isHintUsed) {
@@ -248,8 +253,6 @@ function hideExpend(board, elCell) {
         currCell.isShown = false;
     }
 }
-
-
 
 function cellMarked(ev, elCell) {
     ev.preventDefault();
@@ -341,10 +344,20 @@ function setGameOver(isWin) {
         renderSmiley(VICTORY_SMILEY);
     } else renderSmiley(DEAD_SMILEY);
     gGame.isOn = false;
+
+    if (isWin) {
+        saveLocalStorage(gLevel.title, gGame.secsPasssed);
+        renderBestScore();
+    }
+
+
     clearInterval(gTimeInterval);
     gTimeInterval = null;
     revealMines(gBoard);
+
+
 }
+
 
 function revealMines(board) {
     for (var i = 0; i < board.length; i++) {
@@ -402,6 +415,55 @@ function renderHints() {
         elHints[i].src = HINT_UNUSED;
 
     }
+}
+
+
+function saveLocalStorage(gameLevel, gameTime) {
+    //Time is always higher by 1 than the real time
+    gameTime--;
+    var storageStr = gameLevel + ';' + gameTime;
+    var prevGameScore = getStorageBestScore(gameLevel);
+    if (!prevGameScore) {
+        localStorage.setItem('gameScore' + gameLevel, storageStr);
+    } else {
+        var timeValue = convertStrToBestTime(prevGameScore);
+        if (isNaN(timeValue)) return;
+
+        var bestTime = timeValue;
+        if (gameTime < timeValue) bestTime = gameTime;
+        storageStr = gameLevel + ';' + bestTime;
+        localStorage.setItem('gameScore' + gameLevel, storageStr);
+
+    }
+}
+
+function getStorageBestScore(gameLevel) {
+    return localStorage.getItem('gameScore' + gameLevel);;
+}
+
+function convertStrToBestTime(str) {
+    if (!str) return;
+    var values = str.split(';');
+    return +values[1];
+}
+
+
+function renderBestScore() {
+    var elBestScore = document.querySelector('.best-score-window');
+    var bestScore = getStorageBestScore(gLevel.title);
+    var timeValue = convertStrToBestTime(bestScore);
+    console.log(timeValue);
+    if (isNaN(timeValue)) {
+        elBestScore.style.visibility = 'hidden';
+        return;
+    }
+    elBestScore.style.visibility = 'visible';
+
+    elBestScore.querySelector('.game-level').innerText = gLevel.title;
+    elBestScore.querySelector('.best-time').innerText = timeValue;
+
+
+
 }
 
 

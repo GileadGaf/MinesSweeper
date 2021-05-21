@@ -17,3 +17,12 @@ function shuffle(items) {
 function getSelector(location) {
     return '#cell-' + location.i + '-' + location.j
 }
+
+function removeClass(selector, className) {
+    var elements = document.querySelectorAll(selector);
+    for (var i = 0; i < elements.length; i++) {
+        var element = elements[i];
+        element.classList.remove(className);
+
+    }
+}

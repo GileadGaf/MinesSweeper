@@ -178,9 +178,11 @@ function cellClicked(elCell, i, j) {
         } else {
             //Loosing a leg or 2 but still alive
             smileyChangeTimeOut = setTimeout(function() {
-                renderSmiley(NORMAL_SMILEY);
                 clearTimeout(smileyChangeTimeOut);
                 smileyChangeTimeOut = null;
+                if (gGame.isOn) {
+                    renderSmiley(NORMAL_SMILEY);
+                }
             }, 1000)
             elCell.innerText = MINE;
             cell.isMarked = true;
@@ -210,7 +212,7 @@ function cellClicked(elCell, i, j) {
             elCell.innerText = '';
             //Hiding the cells that were displayed via the hint
             hideExpend(gBoard, elCell);
-            clearInterval(hideCellsTimeOut);
+            clearTimeout(hideCellsTimeOut);
             hideCellsTimeOut = null;
         }, 1000);
     } else {
@@ -293,7 +295,6 @@ function hideExpend(board, elCell) {
 
 function cellMarked(ev, elCell) {
     ev.preventDefault();
-    console.log(elCell.classList[0]);
     if (!gGame.isOn) return;
     var location = getCellLocation(elCell.id);
     if (!location) return;
@@ -306,6 +307,7 @@ function cellMarked(ev, elCell) {
     if (cell.isMarked) gGame.markedCount++;
     else gGame.markedCount--;
     checkGameOver(gBoard);
+
 }
 
 function renderCell(location, value) {

@@ -27,8 +27,8 @@ function removeClass(selector, className) {
     }
 }
 
-function playSound(src) {
-    var audio = new Audio(src);
+function playSound(source) {
+    var audio = new Audio(source);
     audio.currentTime = 0;
     audio.pause();
     audio.play();

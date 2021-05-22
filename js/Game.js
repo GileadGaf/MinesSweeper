@@ -41,7 +41,7 @@ function initilizeGameObject() {
     var cellsLocations = [];
     if (gGame) {
         gameMode = gGame.gamePlayMode;
-        cellsLocations = gGame.cellsLocations;
+        cellsLocations = gGame.minesLocations;
     }
     gGame = {
         isOn: false,
@@ -54,7 +54,8 @@ function initilizeGameObject() {
         shownCount: 0,
         markedCount: 0,
         secsPasssed: 0,
-        cellsLocations: cellsLocations
+        hintedCellsLocations: [],
+        minesLocations: cellsLocations
     }
 }
 
@@ -131,7 +132,7 @@ function changeLevel(elBtn) {
     if (gGame.gamePlayMode === 'sandbox-start') return;
     var boardSize = +elBtn.getAttribute('data-size');
     if (isNaN(boardSize)) return;
-    if (gGame.gamePlayMode === 'sandbox') gGame.cellsLocations = [];
+    if (gGame.gamePlayMode === 'sandbox') gGame.minesLocations = [];
     removeClass('.active', 'active');
     elBtn.classList.add('active');
     gLevel = {};
@@ -157,13 +158,13 @@ function playSandBoxMode() {
     if (gGame.gamePlayMode === 'original') {
         gGame.gamePlayMode = 'sandbox';
         switchOriginalSandBoxTitles(false);
-        //Making sure the cells locations array is empty
-        gGame.cellsLocations = [];
+        //The mines arrays need to be empty before pushing mines to it
+        gGame.minesLocations = [];
     } else if (gGame.gamePlayMode === 'sandbox') {
-        if (!gGame.cellsLocations.length) return;
+        if (!gGame.minesLocations.length) return;
         gGame.gamePlayMode = 'sandbox-start';
-        hideExpend(gBoard, gGame.cellsLocations, false)
-        gLevel.minesCount = gGame.cellsLocations.length;
+        hideExpend(gBoard, gGame.minesLocations)
+        gLevel.minesCount = gGame.minesLocations.length;
         renderBoard(gBoard);
     } else if (gGame.gamePlayMode === 'sandbox-start') {
         gGame.gamePlayMode = 'original';
@@ -207,7 +208,7 @@ function switchOriginalSandBoxTitles(isOriginal) {
 }
 
 function refreshMines(board) {
-    var cellsLocations = gGame.cellsLocations;
+    var cellsLocations = gGame.minesLocations;
     if (cellsLocations) {
         for (var i = 0; i < cellsLocations.length; i++) {
             var currlocation = cellsLocations[i];
@@ -256,7 +257,7 @@ function renderLives() {
     elLives.querySelector('span').innerText = gGame.livesCount;
 }
 
-//Getting the cell itself, the row index and the col index of the cell
+//Getting the cell element itself, the row index and the col index of the cell
 function cellClicked(elCell, i, j) {
     //don't click if the game is over
     if (!gGame.livesCount) return;
@@ -285,17 +286,18 @@ function cellClicked(elCell, i, j) {
 function originalGamePlayMode(elCell, cell, location) {
     //when user presses a mine
     if (cell.isMine) {
+        playSound(BOMB_EXPLOSION_SOUND);
         renderSmiley(DEAD_SMILEY);
-        var smileyChangeTimeOut;
         elCell.classList.add('explosion');
         removeLife();
-        if (gGame.livesCount === 0) {
+        if (!gGame.livesCount) {
             playSound(LOOSE_SOUND);
             openModal();
             setGameOver();
             return;
-        } else {
+        } else { //Lives>0
             //Loosing a leg or 2 but still alive
+            var smileyChangeTimeOut;
             smileyChangeTimeOut = setTimeout(function() {
                 clearTimeout(smileyChangeTimeOut);
                 smileyChangeTimeOut = null;
@@ -303,7 +305,6 @@ function originalGamePlayMode(elCell, cell, location) {
                     renderSmiley(NORMAL_SMILEY);
                 }
             }, 1000)
-            playSound(BOMB_EXPLOSION_SOUND);
             elCell.innerText = MINE;
             cell.isMarked = true;
             cell.isShown = true;
@@ -346,7 +347,7 @@ function hintsGamePlayMode(elCell, cell, location) {
         elCell.innerText = '';
         //Hiding the cells that were displayed via the hint
         elCell.classList.remove('shown');
-        hideExpend(gBoard, gGame.cellsLocations);
+        hideExpend(gBoard, gGame.hintedCellsLocations);
         clearTimeout(hideCellsTimeOut);
         hideCellsTimeOut = null;
     }, 1000);
@@ -356,7 +357,7 @@ function sandboxGamePlayMode(location) {
     gBoard[location.i][location.j].isMine = true;
     showCell(gBoard, location);
     gLevel.minesCount++;
-    gGame.cellsLocations.push(location);
+    gGame.minesLocations.push(location);
 }
 
 function expandShown(board, location) {
@@ -384,8 +385,9 @@ function expandShown(board, location) {
 }
 
 function showHints(board, elCell, location) {
-    //Making sure the cells locations array is empty
-    gGame.cellsLocations = [];
+    //Making sure the hinted cells locations array is empty
+    //This array will push to it the cells the user saw via the hint
+    gGame.hintedCellsLocations = [];
 
     var cell = board[location.i][location.j];
     elCell.classList.add('shown');
@@ -397,7 +399,7 @@ function showHints(board, elCell, location) {
         var currCell = board[currLocation.i][currLocation.j];
         if (!currCell.isShown && !currCell.isMarked) {
             if (gGame.isHintUsed) {
-                gGame.cellsLocations.push(currLocation);
+                gGame.hintedCellsLocations.push(currLocation);
             }
             showCell(board, currLocation);
         }
@@ -423,14 +425,12 @@ function hideCell(board, location) {
     elCell.innerText = '';
     elCell.classList.remove('shown');
 }
-//Getting the board,locations array and a boolean option wheter to empty the array
-// Default value is yes/true
-function hideExpend(board, locations, isCellsDisposable = true) {
+//Getting the board and a locations array in order to hide them
+function hideExpend(board, locations) {
     for (var i = 0; i < locations.length; i++) {
         var currLocation = locations[i];
         hideCell(board, currLocation);
     }
-    if (isCellsDisposable) locations = [];
 }
 
 function cellMarked(ev, elCell, i, j) {
@@ -438,6 +438,7 @@ function cellMarked(ev, elCell, i, j) {
     var location = { i, j };
     switch (gGame.gamePlayMode) {
         case 'original':
+        case 'hints':
         case 'sandbox-start':
             toggleFlags(elCell, location);
             break;
@@ -472,7 +473,7 @@ function removeMines(location) {
     gBoard[location.i][location.j].isMine = false;
     hideCell(gBoard, location);
     gLevel.minesCount--;
-    findAndRemoveLocation(gGame.cellsLocations, location);
+    findAndRemoveLocation(gGame.minesLocations, location);
 }
 
 function findAndRemoveLocation(locations, location) {
@@ -546,7 +547,6 @@ function setGameOver() {
     clearInterval(gTimeInterval);
     gTimeInterval = null;
     revealMines(gBoard);
-
 }
 
 function openModal() {
@@ -576,7 +576,7 @@ function revealMines(board) {
             elCell.innerText = MINE;
             if (!elCell) return;
             if (currCell.isMarked) {
-                if (elCell) elCell.classList.add('defused');
+                elCell.classList.add('defused');
             }
         }
     }
@@ -608,12 +608,18 @@ function useHint(elHint) {
 function removeHint() {
     var elHint = document.querySelector('.hints .hint-active');
     if (!elHint) return;
+
     elHint.classList.remove('hint-active');
     elHint.src = HINT_UNUSED;
     elHint.style.display = 'none';
     gGame.isHintUsed = false;
     gGame.hintsCount--;
-    gGame.gamePlayMode = 'original';
+    var elSandBoxBtn = document.querySelector('.sandbox-btn');
+    var gamePlayMode = 'original';
+    if (elSandBoxBtn.classList.contains('active')) {
+        gamePlayMode = 'sandbox-start';
+    }
+    gGame.gamePlayMode = gamePlayMode;
 }
 
 function renderHints() {
@@ -635,9 +641,11 @@ function displaySafeClick() {
         showCell(gBoard, emptyCells[0]);
         gGame.safeClicksCount--;
         renderSafeClicks();
-        setTimeout(function() {
+        var hideCellTimeOut = setTimeout(function() {
             hideCell(gBoard, emptyCells[0]);
             gGame.isSafeClickUsed = false;
+            clearTimeout(hideCellTimeOut);
+            hideCellTimeOut = null;
         }, 1000);
     }
 }

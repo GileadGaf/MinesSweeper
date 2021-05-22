@@ -14,14 +14,14 @@
 <body onload="initGame()">
     <h1>Mines Sweeper</h1>
     <div class='best-score-window'>
-        <h3>Your best time for "<span class="game-level">Beginner</span>" is <span class="best-time">1000</span> seconds</h3>
+        <h3>Your best time for "<span class="game-level">Beginner</span>" is <span class="best-time">1000</span> <span class="single-plu">seconds</span> !</h3>
     </div>
     <div class="level-select">
         <h4 class='level-select-title'>Please choose a level:</h4>
         <h4 class="hidden sandbox-title">Please deploy your mines:</h4>
         <button data-size="4" title="16 cells - 2 mines" onclick="changeLevel(this)">Beginner(4x4)</button>|
         <button data-size="8" title="64 cells - 12 mines" onclick="changeLevel(this)">Medium(8x8)</button>|
-        <button data-size="12" title="144 cells - 30 mines" onclick="changeLevel(this)">Expert(12x12)</button>
+        <button data-size="12" title="144 cells - 30 mines" onclick="changeLevel(this)">Expert(12x12)</button>|
         <button title="Pick a level and  then press this button" class="sandbox-btn" onclick="playSandBoxMode()">Manual Deploy</button>
     </div>
     <div class="left-section">

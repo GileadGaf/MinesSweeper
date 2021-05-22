@@ -26,7 +26,7 @@ function initGame() {
     gBoard = buildBoard();
     renderBoard(gBoard);
     renderSmiley(NORMAL_SMILEY);
-    if (!gGame.gamePlayMode) gGame.gamePlayMode = 'original'
+    if (!gGame.gamePlayMode) gGame.gamePlayMode = 'original';
     if (gGame.gamePlayMode === 'sandbox-start') refreshMines(gBoard);
     switchOriginalSandBoxTitles(true);
     closeModal();
@@ -168,7 +168,6 @@ function playSandBoxMode() {
         restartGame();
     }
     renderSandboxModeBtn();
-
 }
 
 function renderSandboxModeBtn() {
@@ -324,8 +323,6 @@ function originalGamePlayMode(elCell, cell, location) {
         }
         setMinesNegsCount(gBoard);
     }
-    //User wanted to use a hint
-    //Won't be shown during hint mode
     var cellContent = (cell.isMine) ? MINE : cell.minesAroundCount;
     if (cell.minesAroundCount === 0) {
         cellContent = '';
@@ -340,22 +337,22 @@ function originalGamePlayMode(elCell, cell, location) {
 
 function hintsGamePlayMode(elCell, cell, location) {
     //User wanted to use a hint
-    if (gGame.isHintUsed) {
-        showHints(gBoard, elCell, location);
-        //Removing the hint
-        removeHint();
-        //Starting a timeout of 1 second
-        var hideCellsTimeOut = setTimeout(function() {
+    if (!gGame.isHintUsed) return;
 
-            cell.isShown = false;
-            elCell.innerText = '';
-            //Hiding the cells that were displayed via the hint
-            elCell.classList.remove('shown');
-            hideExpend(gBoard, gGame.cellsLocations);
-            clearTimeout(hideCellsTimeOut);
-            hideCellsTimeOut = null;
-        }, 1000);
-    }
+    showHints(gBoard, elCell, location);
+    //A hint has been used
+    removeHint();
+    //Starting a timeout of 1 second
+    var hideCellsTimeOut = setTimeout(function() {
+        cell.isShown = false;
+        elCell.innerText = '';
+        //Hiding the cells that were displayed via the hint
+        elCell.classList.remove('shown');
+        hideExpend(gBoard, gGame.cellsLocations);
+        clearTimeout(hideCellsTimeOut);
+        hideCellsTimeOut = null;
+    }, 1000);
+
 }
 
 function sandboxGamePlayMode(location) {
@@ -363,9 +360,7 @@ function sandboxGamePlayMode(location) {
     showCell(gBoard, location);
     gLevel.minesCount++;
     gGame.cellsLocations.push(location);
-
 }
-
 
 function expandShown(board, location) {
     var locationsNegs = getNegs(board, location.i, location.j);
@@ -394,6 +389,7 @@ function expandShown(board, location) {
 function showHints(board, elCell, location) {
     //Making sure the cells locations array is empty
     gGame.cellsLocations = [];
+
     var cell = board[location.i][location.j];
     elCell.classList.add('shown');
     var cellContent = cell.isMine ? MINE : cell.minesAroundCount;
@@ -406,13 +402,7 @@ function showHints(board, elCell, location) {
             if (gGame.isHintUsed) {
                 gGame.cellsLocations.push(currLocation);
             }
-            var currElCell = getElCell(currLocation);
-            var cellContent = (currCell.minesAroundCount) > 0 ? currCell.minesAroundCount : '';
-            if (currCell.isMine) cellContent = MINE;
-            currElCell.innerText = cellContent;
-            currElCell.classList.add('shown');
-            currCell.isShown = true;
-
+            showCell(board, currLocation);
         }
     }
 }
@@ -422,8 +412,8 @@ function showCell(board, location) {
     var elCell = getElCell(location);
     if (!cell || !elCell) return;
     cell.isShown = true;
-    var cellContent = cell.isMine ? MINE : cell.minesAroundCount;
-    if (!cell.isMine && cell.minesAroundCount === 0) cellContent = '';
+    var cellContent = (cell.minesAroundCount > 0) ? cell.minesAroundCount : '';
+    if (cell.isMine) cellContent = MINE;
     elCell.innerText = cellContent;
     elCell.classList.add('shown');
 }
@@ -441,11 +431,12 @@ function hideCell(board, location) {
 function hideExpend(board, locations, isCellsDisposable = true) {
     for (var i = 0; i < locations.length; i++) {
         var currLocation = locations[i];
-        var currCell = board[currLocation.i][currLocation.j];
-        var currElCell = getElCell(currLocation);
-        currElCell.innerText = '';
-        currElCell.classList.remove('shown');
-        currCell.isShown = false;
+        hideCell(board, currLocation);
+        // var currCell = board[currLocation.i][currLocation.j];
+        // var currElCell = getElCell(currLocation);
+        // currElCell.innerText = '';
+        // currElCell.classList.remove('shown');
+        // currCell.isShown = false;
     }
     if (isCellsDisposable) locations = [];
 }
@@ -465,15 +456,13 @@ function cellMarked(ev, elCell) {
         default:
             return;
     }
-
-
 }
 
 function toggleFlags(elCell) {
     if (!gGame.isOn) {
         gGame.isOn = true;
         startTime();
-        plantMines(gBoard);
+        if (gGame.gamePlayMode === 'original') plantMines(gBoard);
         setMinesNegsCount(gBoard);
     }
     var location = getCellLocation(elCell.id);
@@ -492,9 +481,7 @@ function removeMines(location) {
     gBoard[location.i][location.j].isMine = false;
     hideCell(gBoard, location);
     gLevel.minesCount--;
-    var x = findAndRemoveLocation(gGame.cellsLocations, location);
-    console.log(x);
-    // gGame.cellsLocations.push(location);
+    findAndRemoveLocation(gGame.cellsLocations, location);
 }
 
 function findAndRemoveLocation(locations, location) {
@@ -507,7 +494,6 @@ function findAndRemoveLocation(locations, location) {
     }
     return -1;
 }
-
 
 function renderCell(location, value) {
     // Select the elCell and set the value
@@ -726,6 +712,9 @@ function renderBestScore() {
         return;
     }
     elBestScore.style.visibility = 'visible';
+    var elSinglePlu = elBestScore.querySelector('.single-plu');
+    if (timeValue === 1) elSinglePlu.innerText = 'second';
+    else elSinglePlu.innerText = 'seconds';
     elBestScore.querySelector('.game-level').innerText = gLevel.title;
     elBestScore.querySelector('.best-time').innerText = timeValue;
 }

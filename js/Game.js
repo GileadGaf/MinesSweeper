@@ -8,6 +8,10 @@ const VICTORY_SMILEY = '😎';
 const HINT_UNUSED = 'img/pic_bulboff.gif';
 const HINT_USED = 'img/pic_bulbon.gif';
 
+const BOMB_EXPLOSION_SOUND = 'sounds/bomb-exploded.wav';
+const VICTORY_SOUND = 'sounds/Victory.mp3';
+const LOOSE_SOUND = 'sounds/Loose.wav';
+
 var gBoard;
 var gLevel;
 var gGame;
@@ -103,16 +107,15 @@ function renderBoard(board) {
     for (var i = 0; i < board.length; i++) {
         strHTML += '<tr>';
         for (var j = 0; j < board[0].length; j++) {
-            var cellId = 'cell-' + i + '-' + j;
-            strHTML += `<td id="${cellId}" class="cell"
+            var cellClass = 'cell-' + i + '-' + j;
+            strHTML += `<td class="cell ${cellClass}"
             onclick="cellClicked(this,${i},${j})"
-            oncontextmenu="cellMarked(event,this)"></td>`;
+            oncontextmenu="cellMarked(event,this,${i},${j})"></td>`;
         }
         strHTML += '</tr>';
     }
     var elContainer = document.querySelector('.board');
     elContainer.innerHTML = strHTML;
-
 }
 
 function plantMines(board) {
@@ -258,19 +261,14 @@ function cellClicked(elCell, i, j) {
     //don't click if the game is over
     if (!gGame.livesCount) return;
     var cell = gBoard[i][j];
-
-
     var cellLocation = { i, j };
-
     //Can't change a displayed/marked cell
     if (cell.isShown || cell.isMarked) return;
-
     switch (gGame.gamePlayMode) {
         case 'original':
         case 'sandbox-start':
             originalGamePlayMode(elCell, cell, cellLocation);
             break;
-
         case 'hints':
             hintsGamePlayMode(elCell, cell, cellLocation)
             break;
@@ -285,7 +283,6 @@ function cellClicked(elCell, i, j) {
 }
 
 function originalGamePlayMode(elCell, cell, location) {
-
     //when user presses a mine
     if (cell.isMine) {
         renderSmiley(DEAD_SMILEY);
@@ -293,6 +290,7 @@ function originalGamePlayMode(elCell, cell, location) {
         elCell.classList.add('explosion');
         removeLife();
         if (gGame.livesCount === 0) {
+            playSound(LOOSE_SOUND);
             openModal();
             setGameOver();
             return;
@@ -305,6 +303,7 @@ function originalGamePlayMode(elCell, cell, location) {
                     renderSmiley(NORMAL_SMILEY);
                 }
             }, 1000)
+            playSound(BOMB_EXPLOSION_SOUND);
             elCell.innerText = MINE;
             cell.isMarked = true;
             cell.isShown = true;
@@ -332,7 +331,6 @@ function originalGamePlayMode(elCell, cell, location) {
     elCell.classList.add('shown');
     gGame.shownCount++;
     checkGameOver(gBoard);
-
 }
 
 function hintsGamePlayMode(elCell, cell, location) {
@@ -352,7 +350,6 @@ function hintsGamePlayMode(elCell, cell, location) {
         clearTimeout(hideCellsTimeOut);
         hideCellsTimeOut = null;
     }, 1000);
-
 }
 
 function sandboxGamePlayMode(location) {
@@ -432,22 +429,17 @@ function hideExpend(board, locations, isCellsDisposable = true) {
     for (var i = 0; i < locations.length; i++) {
         var currLocation = locations[i];
         hideCell(board, currLocation);
-        // var currCell = board[currLocation.i][currLocation.j];
-        // var currElCell = getElCell(currLocation);
-        // currElCell.innerText = '';
-        // currElCell.classList.remove('shown');
-        // currCell.isShown = false;
     }
     if (isCellsDisposable) locations = [];
 }
 
-function cellMarked(ev, elCell) {
+function cellMarked(ev, elCell, i, j) {
     ev.preventDefault();
-    var location = getCellLocation(elCell.id);
+    var location = { i, j };
     switch (gGame.gamePlayMode) {
         case 'original':
         case 'sandbox-start':
-            toggleFlags(elCell);
+            toggleFlags(elCell, location);
             break;
         case 'sandbox':
             removeMines(location);
@@ -458,14 +450,13 @@ function cellMarked(ev, elCell) {
     }
 }
 
-function toggleFlags(elCell) {
+function toggleFlags(elCell, location) {
     if (!gGame.isOn) {
         gGame.isOn = true;
         startTime();
         if (gGame.gamePlayMode === 'original') plantMines(gBoard);
         setMinesNegsCount(gBoard);
     }
-    var location = getCellLocation(elCell.id);
     if (!location) return;
     var cell = gBoard[location.i][location.j];
     if (cell.isShown) return;
@@ -493,24 +484,6 @@ function findAndRemoveLocation(locations, location) {
         }
     }
     return -1;
-}
-
-function renderCell(location, value) {
-    // Select the elCell and set the value
-    var selector = getSelector(location);
-    var elCell = document.querySelector(selector);
-    elCell.innerText = value;
-}
-
-function getCellLocation(cellIdStr) {
-    var parts = cellIdStr.split('-');
-    var i = +parts[1];
-    var j = +parts[2];
-    if (!isNaN(i) && !isNaN(j)) {
-        var location = { i, j };
-        return location;
-    }
-    return null;
 }
 
 function getNegs(board, rowIdx, colIdx) {
@@ -561,6 +534,7 @@ function checkGameOver(board) {
     if (gGame.gamePlayMode === 'original') {
         saveLocalStorage(gLevel.title, gGame.secsPasssed);
     }
+    playSound(VICTORY_SOUND);
     openModal();
     setGameOver();
     renderSmiley(VICTORY_SMILEY);

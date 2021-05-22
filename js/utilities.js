@@ -15,7 +15,7 @@ function shuffle(items) {
 }
 
 function getSelector(location) {
-    return '#cell-' + location.i + '-' + location.j
+    return '.cell-' + location.i + '-' + location.j
 }
 
 function removeClass(selector, className) {
@@ -25,4 +25,11 @@ function removeClass(selector, className) {
         element.classList.remove(className);
 
     }
+}
+
+function playSound(src) {
+    var audio = new Audio(src);
+    audio.currentTime = 0;
+    audio.pause();
+    audio.play();
 }
